@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/imulab/soteria/pkg/oauth"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
 	"strings"
@@ -58,6 +59,15 @@ func (p *OAuthAuthorizeRequestQueryParser) parseHttpGet(ctx context.Context, v u
 	default:
 		// continue
 	}
+
+	// debug
+	logrus.WithFields(logrus.Fields{
+		"client_id": v.Get("client_id"),
+		"response_type": v.Get("response_type"),
+		"redirect_uri": v.Get("redirect_uri"),
+		"scope": v.Get("scope"),
+		"state": v.Get("state"),
+	}).Debug("Received request.")
 
 	// client
 	var client oauth.Client
