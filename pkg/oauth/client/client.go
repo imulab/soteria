@@ -1,4 +1,4 @@
-package oauth
+package client
 
 // Interface to an OAuth 2.0 Client.
 type Client interface {
@@ -58,17 +58,4 @@ func (c *DefaultClient) GetGrantTypes() []string {
 
 func (c *DefaultClient) GetScopes() []string {
 	return c.Scopes
-}
-
-// Single purpose interface for finding a client by its id.
-type ClientLookup interface {
-	// Find client by its id. Returns the client or an ErrClientNotFound error.
-	Find(id string) (Client, error)
-}
-
-// Dummy implementation for ClientLookup that always returns not found error.
-type NotFoundClientLookup struct {}
-
-func (_ *NotFoundClientLookup) Find(id string) (Client, error) {
-	return nil, ErrClientNotFound
 }

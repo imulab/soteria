@@ -3,6 +3,7 @@ package request
 import (
 	"context"
 	"github.com/imulab/soteria/pkg/oauth"
+	"github.com/imulab/soteria/pkg/oauth/client"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"net/http"
@@ -13,7 +14,7 @@ import (
 
 type OAuthAuthorizeRequestQueryParser struct {
 	next                       OAuthAuthorizeRequestParser
-	ClientLookup               oauth.ClientLookup
+	ClientLookup               client.Repository
 	ClientLookupTimeoutSeconds uint8
 }
 
@@ -70,8 +71,8 @@ func (p *OAuthAuthorizeRequestQueryParser) parseHttpGet(ctx context.Context, v u
 	}).Debug("Received request.")
 
 	// client
-	var client oauth.Client
-	findClientChan, findClientErr := make(chan oauth.Client), make(chan error)
+	var c client.Client
+	findClientChan, findClientErr := make(chan client.Client), make(chan error)
 	findClientCtx, cancelFindClient := context.WithTimeout(ctx, p.clientLookupTimeout())
 	defer cancelFindClient()
 	go p.findClient(findClientCtx, v.Get("client_id"), findClientChan, findClientErr)
@@ -87,12 +88,12 @@ func (p *OAuthAuthorizeRequestQueryParser) parseHttpGet(ctx context.Context, v u
 		return oauth.ErrContextCancelled
 	case err := <-findClientErr:
 		return err
-	case client = <-findClientChan:
-		req.setClient(client)
+	case c = <-findClientChan:
+		req.setClient(c)
 	}
 
 	// redirect_uri
-	if effectiveRedirectUri, err := oauth.SelectRedirectUri(v.Get("redirect_uri"), client.GetRedirectUris()); err != nil {
+	if effectiveRedirectUri, err := oauth.SelectRedirectUri(v.Get("redirect_uri"), c.GetRedirectUris()); err != nil {
 		return errors.WithStack(err)
 	} else {
 		req.setRedirectUri(effectiveRedirectUri)
@@ -101,12 +102,12 @@ func (p *OAuthAuthorizeRequestQueryParser) parseHttpGet(ctx context.Context, v u
 	return nil
 }
 
-func (p *OAuthAuthorizeRequestQueryParser) findClient(ctx context.Context, clientId string, resultChan chan <-oauth.Client, errChan chan <-error) {
+func (p *OAuthAuthorizeRequestQueryParser) findClient(ctx context.Context, clientId string, resultChan chan <-client.Client, errChan chan <-error) {
 	if len(clientId) == 0 {
 		errChan <- oauth.ErrMissingParam
-	} else if client, err := p.ClientLookup.Find(clientId); err != nil {
+	} else if c, err := p.ClientLookup.Find(ctx, clientId); err != nil {
 		errChan <- errors.WithStack(err)
 	} else {
-		resultChan <- client
+		resultChan <- c
 	}
 }

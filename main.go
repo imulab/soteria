@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/imulab/soteria/app/authorize"
+	"github.com/imulab/soteria/app/client"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"os"
@@ -21,6 +22,7 @@ func init() {
 
 func main() {
 	rootCommand.AddCommand(authorize.ApiCommand())
+	rootCommand.AddCommand(client.ApiCommand())
 	if err := rootCommand.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)

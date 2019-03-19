@@ -2,6 +2,7 @@ package request
 
 import (
 	"github.com/imulab/soteria/pkg/oauth"
+	"github.com/imulab/soteria/pkg/oauth/client"
 	"time"
 )
 
@@ -16,9 +17,9 @@ type OAuthRequest interface {
 	// Set timestamp
 	setTimestamp(timestamp int64)
 	// Returns the client for this request
-	GetClient() oauth.Client
+	GetClient() client.Client
 	// Set client
-	setClient(client oauth.Client)
+	setClient(client client.Client)
 	// Returns the requested redirect uri
 	GetRedirectUri() string
 	// Set redirect uri
@@ -33,7 +34,7 @@ type OAuthRequest interface {
 type oauthRequestImpl struct {
 	Id 			string
 	Timestamp	int64
-	Client 		oauth.Client
+	Client 		client.Client
 	RedirectUri	string
 	Session 	oauth.Session
 }
@@ -46,7 +47,7 @@ func (r *oauthRequestImpl) setTimestamp(timestamp int64) {
 	r.Timestamp = timestamp
 }
 
-func (r *oauthRequestImpl) setClient(client oauth.Client) {
+func (r *oauthRequestImpl) setClient(client client.Client) {
 	r.Client = client
 }
 
@@ -66,7 +67,7 @@ func (r *oauthRequestImpl) GetTimestamp() time.Time {
 	return time.Unix(r.Timestamp, 0)
 }
 
-func (r *oauthRequestImpl) GetClient() oauth.Client {
+func (r *oauthRequestImpl) GetClient() client.Client {
 	return r.Client
 }
 

@@ -13,7 +13,7 @@ var (
 	ErrClientNotFound = errors.New("client is not found")
 	ErrMethodNotSupported = errors.New("http method not supported")
 	ErrMissingParam = errors.New("missing parameter")
-
+	ErrBadScope = errors.New("bad_scope")
 	// redirect_uri
 	ErrMultipleRedirectUri = errors.New("multiple registered redirect_uri")
 	ErrUnregisteredRedirectUri = errors.New("redirect_uri not registered")

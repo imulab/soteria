@@ -3,13 +3,14 @@ package handler
 import (
 	"context"
 	"github.com/imulab/soteria/pkg/oauth"
+	"github.com/imulab/soteria/pkg/oauth/client"
 	"github.com/imulab/soteria/pkg/oauth/request"
 	"github.com/imulab/soteria/pkg/oauth/token"
 	"github.com/imulab/soteria/pkg/utility"
 )
 
 type AuthorizeCodeHandler struct {
-	ScopeStrategy 	oauth.ScopeStrategy
+	ScopeStrategy 	client.ScopeStrategy
 	CodeStrategy 	token.AuthorizeCodeStrategy
 	CodeStorage 	token.AuthorizeCodeRepository
 	next 			OAuthAuthorizeHandler

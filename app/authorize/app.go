@@ -1,7 +1,8 @@
 package authorize
 
 import (
-	"github.com/imulab/soteria/pkg/oauth"
+	"github.com/gorilla/mux"
+	"github.com/imulab/soteria/pkg/oauth/client"
 	handler2 "github.com/imulab/soteria/pkg/oauth/handler"
 	"github.com/imulab/soteria/pkg/oauth/request"
 	"github.com/imulab/soteria/pkg/oauth/token"
@@ -20,7 +21,7 @@ func (api *authorizeApi) setup() error {
 
 	// parsers
 	rootParser := &request.OAuthAuthorizeRequestQueryParser{
-		ClientLookup: &oauth.NotFoundClientLookup{},
+		ClientLookup: &client.NotFoundClientLookup{},
 		ClientLookupTimeoutSeconds: 10,
 	}
 	rootParser.WithNext(&request.OAuthAuthorizeRequestSessionParser{})
@@ -31,7 +32,7 @@ func (api *authorizeApi) setup() error {
 		return errors.WithStack(err)
 	}
 	rootHandler := &handler2.AuthorizeCodeHandler{
-		ScopeStrategy: &oauth.EqualityScopeStrategy{IgnoreCase: false},
+		ScopeStrategy: &client.EqualityScopeStrategy{IgnoreCase: false},
 		CodeStorage: token.NewNoOpAuthorizeCodeRepository(),
 		CodeStrategy: codeStrategy,
 	}
@@ -46,11 +47,11 @@ func (api *authorizeApi) setup() error {
 }
 
 func (api *authorizeApi) startWebServer() error {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/oauth/authorize", api.Handler.Handle)
+	r := mux.NewRouter()
+	r.HandleFunc("/oauth/authorize", api.Handler.Handle)
 
 	n := negroni.Classic()
-	n.UseHandler(mux)
+	n.UseHandler(r)
 
 	return http.ListenAndServe(":8080", n)
 }

@@ -1,4 +1,4 @@
-package oauth
+package client
 
 import (
 	"fmt"

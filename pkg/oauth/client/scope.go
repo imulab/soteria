@@ -1,12 +1,7 @@
-package oauth
+package client
 
 import (
-	"errors"
 	"strings"
-)
-
-var (
-	ErrBadScope = errors.New("bad_scope")
 )
 
 type ScopeStrategy interface {
