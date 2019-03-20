@@ -31,7 +31,7 @@ func (h *ClientHandler) HandleGet(rw http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ClientHandler) RenderError(rw http.ResponseWriter, r *http.Request, err error) {
-	rw.WriteHeader(500)
+	rw.Header().Set("Content-Type", "application/json")
 }
 
 func (h *ClientHandler) RenderClient(rw http.ResponseWriter, r *http.Request, c client.Client) {

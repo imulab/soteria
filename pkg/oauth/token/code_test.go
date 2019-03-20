@@ -2,7 +2,6 @@ package token
 
 import (
 	"context"
-	"github.com/imulab/soteria/pkg/oauth"
 	"github.com/imulab/soteria/pkg/oauth/request"
 	"github.com/imulab/soteria/pkg/utility"
 	"github.com/stretchr/testify/suite"
@@ -180,5 +179,5 @@ func (s *MemoryAuthorizeCodeRepositoryTestSuite) TestCRUD() {
 	err = repo.Delete(foo, context.Background())
 	s.Assert().Nil(err)
 	_, err = repo.GetSession(foo, context.Background())
-	s.Assert().Equal(oauth.ErrAuthorizeCodeNotFound, err)
+	s.Assert().NotNil(err)
 }

@@ -2,7 +2,7 @@ package client
 
 import (
 	"context"
-	"github.com/imulab/soteria/pkg/oauth"
+	oauthError "github.com/imulab/soteria/pkg/oauth/error"
 )
 
 // Interface for managing client
@@ -21,7 +21,7 @@ type Repository interface {
 type NotFoundClientLookup struct {}
 
 func (_ *NotFoundClientLookup) Find(ctx context.Context, id string) (Client, error) {
-	return nil, oauth.ErrClientNotFound
+	return nil, oauthError.InvalidClient("client not found.")
 }
 
 func (_ *NotFoundClientLookup) Create(ctx context.Context, client Client) error {

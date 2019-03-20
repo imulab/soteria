@@ -4,8 +4,10 @@ import (
 	"context"
 	"github.com/imulab/soteria/pkg/crypt"
 	"github.com/imulab/soteria/pkg/oauth"
+	oauthError "github.com/imulab/soteria/pkg/oauth/error"
 	"github.com/imulab/soteria/pkg/oauth/request"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"strings"
 	"sync"
 )
@@ -65,10 +67,13 @@ type HmacShaAuthorizeCodeStrategy struct {
 func (s *HmacShaAuthorizeCodeStrategy) NewCode(req request.OAuthAuthorizeRequest, ctx context.Context) (string, error) {
 	select {
 	case <-ctx.Done():
-		return "", oauth.ErrContextCancelled
+		return "", oauthError.ContextCancelled()
 	default:
 		if key, sig, err := s.Hmac.Generate(s.Entropy); err != nil {
-			return "", errors.Wrap(err, "failed to create authorization code")
+			logrus.WithFields(logrus.Fields{
+				"error": err,
+			}).Errorln("failed to generate authorization code.")
+			return "", oauthError.ServerError("failed to generate authorization code.")
 		} else {
 			return key + "." + sig, nil
 		}
@@ -78,13 +83,17 @@ func (s *HmacShaAuthorizeCodeStrategy) NewCode(req request.OAuthAuthorizeRequest
 func (s *HmacShaAuthorizeCodeStrategy) ValidateCode(code string, req request.OAuthAuthorizeRequest, ctx context.Context) error {
 	select {
 	case <-ctx.Done():
-		return oauth.ErrContextCancelled
+		return oauthError.ContextCancelled()
 	default:
 		parts := strings.Split(code, ".")
 		if len(parts) != 2 {
-			return oauth.ErrInvalidAuthorizeCode
+			logrus.Debugln("authorization code has bad format.")
+			return oauthError.InvalidGrant("invalid authorization code.")
 		} else if err := s.Hmac.Verify(parts[0], parts[1]); err != nil {
-			return oauth.ErrInvalidAuthorizeCode
+			logrus.WithFields(logrus.Fields{
+				"error": err,
+			}).Debugln("authorization code has bad signature.")
+			return oauthError.InvalidGrant("invalid authorization code.")
 		}
 		return nil
 	}
@@ -114,12 +123,12 @@ type memoryAuthorizeCodeRepository struct {
 func (r *memoryAuthorizeCodeRepository) GetSession(code string, ctx context.Context) (oauth.Session, error) {
 	select {
 	case <-ctx.Done():
-		return nil, oauth.ErrContextCancelled
+		return nil, oauthError.ContextCancelled()
 	default:
 		r.RLock()
 		defer r.RUnlock()
 		if session, ok := r.db[code]; !ok {
-			return nil, oauth.ErrAuthorizeCodeNotFound
+			return nil, oauthError.InvalidGrant("authorization code not found.")
 		} else {
 			return session, nil
 		}
@@ -129,7 +138,7 @@ func (r *memoryAuthorizeCodeRepository) GetSession(code string, ctx context.Cont
 func (r *memoryAuthorizeCodeRepository) Save(code string, req request.OAuthAuthorizeRequest, ctx context.Context) error {
 	select {
 	case <-ctx.Done():
-		return oauth.ErrContextCancelled
+		return oauthError.ContextCancelled()
 	default:
 		r.Lock()
 		defer r.Unlock()
@@ -141,7 +150,7 @@ func (r *memoryAuthorizeCodeRepository) Save(code string, req request.OAuthAutho
 func (r *memoryAuthorizeCodeRepository) Delete(code string, ctx context.Context) error {
 	select {
 	case <-ctx.Done():
-		return oauth.ErrContextCancelled
+		return oauthError.ContextCancelled()
 	default:
 		r.Lock()
 		defer r.Unlock()

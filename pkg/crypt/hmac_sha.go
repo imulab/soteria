@@ -6,10 +6,12 @@ import (
 	"crypto/sha512"
 	"encoding/base64"
 	"fmt"
-	"github.com/imulab/soteria/pkg/oauth"
 	"github.com/imulab/soteria/pkg/utility"
+	"github.com/pkg/errors"
 	"hash"
 )
+
+var errSignatureMismatch = errors.New("signature mismatch")
 
 type HmacShaStrategy interface {
 	// Generate a new key with signature.
@@ -87,7 +89,7 @@ func (h *hmacSha) Verify(key, sig string) error {
 
 	expectSig := h.sign(rawKey, h.signingKey)
 	if !hmac.Equal(expectSig, rawSig) {
-		return oauth.ErrSignatureMismatch
+		return errSignatureMismatch
 	}
 
 	return nil

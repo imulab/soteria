@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/imulab/soteria/pkg/oauth"
 	"github.com/imulab/soteria/pkg/oauth/client"
+	oauthError "github.com/imulab/soteria/pkg/oauth/error"
 	"github.com/imulab/soteria/pkg/oauth/request"
 	"github.com/imulab/soteria/pkg/oauth/token"
 	"github.com/imulab/soteria/pkg/utility"
@@ -28,17 +29,17 @@ func (h *AuthorizeCodeHandler) WithNext(next OAuthAuthorizeHandler) OAuthAuthori
 func (h *AuthorizeCodeHandler) Authorize(req request.OAuthAuthorizeRequest, resp oauth.AuthorizeResponse, ctx context.Context) error {
 	select {
 	case <-ctx.Done():
-		return oauth.ErrContextCancelled
+		return oauthError.ContextCancelled()
 	default:
 		// continue processing
 	}
 
 	if !utility.Exactly(req.GetClient().GetResponseTypes(), oauth.ResponseTypeCode) {
-		return h.next.Authorize(req, resp, ctx)
+		return h.nextAuthorize(req, resp, ctx)
 	}
 
 	if !h.ScopeStrategy.AcceptsAll(req.GetClient(), req.GetSession().GetGrantedScopes()) {
-		return oauth.ErrBadScope
+		return oauthError.InvalidScope("rejected by client.")
 	}
 
 	if code, err := h.CodeStrategy.NewCode(req, ctx); err != nil {
@@ -51,6 +52,10 @@ func (h *AuthorizeCodeHandler) Authorize(req request.OAuthAuthorizeRequest, resp
 
 	req.HandledResponseType(oauth.ResponseTypeCode)
 
+	return h.nextAuthorize(req, resp, ctx)
+}
+
+func (h *AuthorizeCodeHandler) nextAuthorize(req request.OAuthAuthorizeRequest, resp oauth.AuthorizeResponse, ctx context.Context) error {
 	if h.next != nil {
 		return h.next.Authorize(req, resp, ctx)
 	}

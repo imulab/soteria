@@ -1,7 +1,6 @@
 package crypt
 
 import (
-	"github.com/imulab/soteria/pkg/oauth"
 	"github.com/imulab/soteria/pkg/utility"
 	"github.com/stretchr/testify/suite"
 	"testing"
@@ -93,8 +92,8 @@ func (s *HmacShaStrategyTestSuite) TestVerify() {
 	s.Assert().Nil(err)
 
 	err = strategy.Verify(key1, sig2)
-	s.Assert().Equal(oauth.ErrSignatureMismatch, err)
+	s.Assert().Equal(errSignatureMismatch, err)
 
 	err = strategy.Verify(key2, sig1)
-	s.Assert().Equal(oauth.ErrSignatureMismatch, err)
+	s.Assert().Equal(errSignatureMismatch, err)
 }

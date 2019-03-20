@@ -2,8 +2,10 @@ package request
 
 import (
 	"context"
+	"fmt"
 	"github.com/imulab/soteria/pkg/oauth"
 	"github.com/imulab/soteria/pkg/oauth/client"
+	oauthError "github.com/imulab/soteria/pkg/oauth/error"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"net/http"
@@ -39,12 +41,15 @@ func (p *OAuthAuthorizeRequestQueryParser) Parse(ctx context.Context, r *http.Re
 	switch r.Method {
 	case http.MethodGet:
 		if queries, err := url.ParseQuery(r.URL.RawQuery); err != nil {
-			return errors.WithStack(err)
+			logrus.WithFields(logrus.Fields{
+				"error": err,
+			}).Errorln("failed to parse url query.")
+			return oauthError.ServerError("failed to parse url query.")
 		} else if err := p.parseHttpGet(ctx, queries, req); err != nil {
 			return errors.WithStack(err)
 		}
 	default:
-		return oauth.ErrMethodNotSupported
+		return oauthError.InvalidRequest("unsupported method.")
 	}
 
 	if p.next != nil {
@@ -56,7 +61,7 @@ func (p *OAuthAuthorizeRequestQueryParser) Parse(ctx context.Context, r *http.Re
 func (p *OAuthAuthorizeRequestQueryParser) parseHttpGet(ctx context.Context, v url.Values, req OAuthAuthorizeRequest) error {
 	select {
 	case <-ctx.Done():
-		return oauth.ErrContextCancelled
+		return oauthError.ContextCancelled()
 	default:
 		// continue
 	}
@@ -68,7 +73,7 @@ func (p *OAuthAuthorizeRequestQueryParser) parseHttpGet(ctx context.Context, v u
 		"redirect_uri": v.Get("redirect_uri"),
 		"scope": v.Get("scope"),
 		"state": v.Get("state"),
-	}).Debug("Received request.")
+	}).Debug("received request.")
 
 	// client
 	var c client.Client
@@ -85,7 +90,7 @@ func (p *OAuthAuthorizeRequestQueryParser) parseHttpGet(ctx context.Context, v u
 	// wait for client result
 	select {
 	case <-findClientCtx.Done():
-		return oauth.ErrContextCancelled
+		return oauthError.ContextCancelled()
 	case err := <-findClientErr:
 		return err
 	case c = <-findClientChan:
@@ -104,7 +109,7 @@ func (p *OAuthAuthorizeRequestQueryParser) parseHttpGet(ctx context.Context, v u
 
 func (p *OAuthAuthorizeRequestQueryParser) findClient(ctx context.Context, clientId string, resultChan chan <-client.Client, errChan chan <-error) {
 	if len(clientId) == 0 {
-		errChan <- oauth.ErrMissingParam
+		errChan <- oauthError.InvalidRequest(fmt.Sprintf("%s is required.", "client_id"))
 	} else if c, err := p.ClientLookup.Find(ctx, clientId); err != nil {
 		errChan <- errors.WithStack(err)
 	} else {
