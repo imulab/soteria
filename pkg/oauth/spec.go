@@ -20,3 +20,12 @@ const (
 	ScopeOffline = "offline"
 	ScopeOfflineAccess = "offline_access"
 )
+
+// Parameters
+const (
+	ParamClientId = "client_id"
+	ParamResponseType = "response_type"
+	ParamRedirectUri = "redirect_uri"
+	ParamScope = "scope"
+	ParamState = "state"
+)

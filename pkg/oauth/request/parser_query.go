@@ -68,11 +68,11 @@ func (p *OAuthAuthorizeRequestQueryParser) parseHttpGet(ctx context.Context, v u
 
 	// debug
 	logrus.WithFields(logrus.Fields{
-		"client_id": v.Get("client_id"),
-		"response_type": v.Get("response_type"),
-		"redirect_uri": v.Get("redirect_uri"),
-		"scope": v.Get("scope"),
-		"state": v.Get("state"),
+		oauth.ParamClientId: v.Get(oauth.ParamClientId),
+		oauth.ParamResponseType: v.Get(oauth.ParamResponseType),
+		oauth.ParamRedirectUri: v.Get(oauth.ParamRedirectUri),
+		oauth.ParamScope: v.Get(oauth.ParamScope),
+		oauth.ParamState: v.Get(oauth.ParamState),
 	}).Debug("received request.")
 
 	// client
@@ -80,12 +80,12 @@ func (p *OAuthAuthorizeRequestQueryParser) parseHttpGet(ctx context.Context, v u
 	findClientChan, findClientErr := make(chan client.Client), make(chan error)
 	findClientCtx, cancelFindClient := context.WithTimeout(ctx, p.clientLookupTimeout())
 	defer cancelFindClient()
-	go p.findClient(findClientCtx, v.Get("client_id"), findClientChan, findClientErr)
+	go p.findClient(findClientCtx, v.Get(oauth.ParamClientId), findClientChan, findClientErr)
 
 	// client independent parameters
-	req.addResponseTypes(strings.Split(v.Get("response_type"), " "))
-	req.addScopes(strings.Split(v.Get("scope"), " "))
-	req.setState(v.Get("state"))
+	req.addResponseTypes(strings.Split(v.Get(oauth.ParamResponseType), " "))
+	req.addScopes(strings.Split(v.Get(oauth.ParamScope), " "))
+	req.setState(v.Get(oauth.ParamState))
 
 	// wait for client result
 	select {
@@ -98,7 +98,7 @@ func (p *OAuthAuthorizeRequestQueryParser) parseHttpGet(ctx context.Context, v u
 	}
 
 	// redirect_uri
-	if effectiveRedirectUri, err := oauth.SelectRedirectUri(v.Get("redirect_uri"), c.GetRedirectUris()); err != nil {
+	if effectiveRedirectUri, err := oauth.SelectRedirectUri(v.Get(oauth.ParamRedirectUri), c.GetRedirectUris()); err != nil {
 		return errors.WithStack(err)
 	} else {
 		req.setRedirectUri(effectiveRedirectUri)
@@ -109,7 +109,7 @@ func (p *OAuthAuthorizeRequestQueryParser) parseHttpGet(ctx context.Context, v u
 
 func (p *OAuthAuthorizeRequestQueryParser) findClient(ctx context.Context, clientId string, resultChan chan <-client.Client, errChan chan <-error) {
 	if len(clientId) == 0 {
-		errChan <- oauthError.InvalidRequest(fmt.Sprintf("%s is required.", "client_id"))
+		errChan <- oauthError.InvalidRequest(fmt.Sprintf("%s is required.", oauth.ParamClientId))
 	} else if c, err := p.ClientLookup.Find(ctx, clientId); err != nil {
 		errChan <- errors.WithStack(err)
 	} else {
